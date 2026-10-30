@@ -9,6 +9,8 @@ public class PlayerScript : MonoBehaviour
     BoxCollider2D boxCollider;
     public LayerMask layerMask;
     Animator animator;
+    bool control;
+    bool hit;
 
     bool doubleJump;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -19,90 +21,107 @@ public class PlayerScript : MonoBehaviour
         boxCollider = GetComponent<BoxCollider2D>();
         animator = GetComponent<Animator>();
         doubleJump = false;
+        control = true;
+        hit = false;
     }
 
     // Update is called once per frame
     void Update()
     {
         // Control
-        
-        // Left Arrow
-        if (Input.GetKey(KeyCode.LeftArrow))
+
+        if (control)
         {
-            sprite.flipX = true;
-
-            if (Input.GetKey(KeyCode.LeftShift))
+            // Left Arrow
+            if (Input.GetKey(KeyCode.LeftArrow))
             {
-                rigidbody.linearVelocity = new Vector2(-10f,rigidbody.linearVelocity.y);
-                animator.speed = 2f;
-            }
-            else
-            {
-                rigidbody.linearVelocity = new Vector2(-4f,rigidbody.linearVelocity.y);
-                animator.speed = 1f;
-            }
-            
+                sprite.flipX = true;
 
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    rigidbody.linearVelocity = new Vector2(-10f,rigidbody.linearVelocity.y);
+                    animator.speed = 2f;
+                }
+                else
+                {
+                    rigidbody.linearVelocity = new Vector2(-4f,rigidbody.linearVelocity.y);
+                    animator.speed = 1f;
+                }
+                
+
+            }
+
+            // Right Arrow
+            if (Input.GetKey(KeyCode.RightArrow))
+            {
+                sprite.flipX = false;
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    rigidbody.linearVelocity = new Vector2(10f,rigidbody.linearVelocity.y);
+                    animator.speed = 2f;
+                }
+                else
+                {
+                    rigidbody.linearVelocity = new Vector2(4f,rigidbody.linearVelocity.y);
+                    animator.speed = 1f;
+                }    
+            }
+
+            // Space
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (isGrounded()){
+                    sprite.flipX = false;
+                    rigidbody.linearVelocity = new Vector2(0,5f);
+                    doubleJump = true;
+                }
+                else if (doubleJump)
+                {
+                    rigidbody.linearVelocity = new Vector2(0,5f);
+                    doubleJump = false;
+                    
+                }
+            }
         }
 
-        // Right Arrow
-        if (Input.GetKey(KeyCode.RightArrow))
+
+        if (!hit)
         {
-            sprite.flipX = false;
-            if (Input.GetKey(KeyCode.LeftShift))
+            //Animations
+            if (isGrounded() && !Input.GetKey(KeyCode.LeftArrow) &&  !Input.GetKey(KeyCode.RightArrow))
             {
-                rigidbody.linearVelocity = new Vector2(10f,rigidbody.linearVelocity.y);
-                animator.speed = 2f;
+                animator.SetInteger("status",0);
             }
-            else
+            else if(isGrounded() && ( Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow)))
             {
-                rigidbody.linearVelocity = new Vector2(4f,rigidbody.linearVelocity.y);
-                animator.speed = 1f;
+                animator.SetInteger("status",1);
+            }
+            else if(rigidbody.linearVelocity.y > 0)
+            {
+                if(doubleJump)
+                {
+                    animator.SetInteger("status",2);
+                }
+                else
+                {
+                    animator.SetInteger("status",4);
+                }
+            }
+            else if(rigidbody.linearVelocity.y < 0)
+            {
+                animator.SetInteger("status",3);
             }    
         }
+        
 
-        // Space
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (isGrounded()){
-                sprite.flipX = false;
-                rigidbody.linearVelocity = new Vector2(0,4f);
-                doubleJump = true;
-            }
-            else if (doubleJump)
-            {
-                rigidbody.linearVelocity = new Vector2(0,4f);
-                doubleJump = false;
-                
-            }
-     
-        }
+    }
 
-        //Animations
-        if (isGrounded() && !Input.GetKey(KeyCode.LeftArrow) &&  !Input.GetKey(KeyCode.RightArrow))
-        {
-            animator.SetInteger("status",0);
-        }
-        else if(isGrounded() && ( Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow)))
-        {
-            animator.SetInteger("status",1);
-        }
-        else if(rigidbody.linearVelocity.y > 0)
-        {
-            if(doubleJump)
-            {
-                animator.SetInteger("status",2);
-            }
-            else
-            {
-                animator.SetInteger("status",4);
-            }
-        }
-        else if(rigidbody.linearVelocity.y < 0)
-        {
-            animator.SetInteger("status",3);
-        }
+    public void goToIdle()
+    {
+        control = true;
+        hit = false;
 
+        animator.SetInteger("status",1);
     }
 
 
@@ -117,11 +136,29 @@ public class PlayerScript : MonoBehaviour
             layerMask
              );
     }
+
+
     public void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag == "Limite")
         {
             animator.SetTrigger("delete");
+        }
+        if(collision.gameObject.tag == "Hit")
+        {
+            control = false;
+            hit = true;   
+
+            animator.SetInteger("status",5);
+
+            if (sprite.flipX)
+            {
+                rigidbody.linearVelocity = new Vector2(5f,5f);
+            }
+            else
+            {
+                rigidbody.linearVelocity = new Vector2(-5f,5f);
+            }
         }
     }
 
