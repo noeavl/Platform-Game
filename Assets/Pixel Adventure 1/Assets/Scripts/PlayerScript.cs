@@ -1,9 +1,13 @@
+using NUnit.Framework;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class PlayerScript : MonoBehaviour
 {
-
+    public TextMeshProUGUI text_apples;
+    int countApples;
     SpriteRenderer sprite;
     Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
@@ -11,7 +15,7 @@ public class PlayerScript : MonoBehaviour
     Animator animator;
     bool control;
     bool hit;
-
+    bool water;
     bool doubleJump;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -23,6 +27,10 @@ public class PlayerScript : MonoBehaviour
         doubleJump = false;
         control = true;
         hit = false;
+        water= false;
+
+        countApples = 0;
+        text_apples.SetText(""+countApples);
     }
 
     // Update is called once per frame
@@ -70,7 +78,11 @@ public class PlayerScript : MonoBehaviour
             // Space
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                if (isGrounded()){
+                if (water)
+                {
+                    rigidbody.linearVelocity = new Vector2(0,4f);
+                    doubleJump = true;
+                } else if (isGrounded()){
                     sprite.flipX = false;
                     rigidbody.linearVelocity = new Vector2(0,5f);
                     doubleJump = true;
@@ -140,7 +152,21 @@ public class PlayerScript : MonoBehaviour
 
     public void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "Limite")
+
+         if(collision.gameObject.tag == "Rino")
+        {
+            if (isGrounded())
+            {
+                animator.SetTrigger("delete");
+            }
+            else
+            {
+                rigidbody.linearVelocity = new Vector2(rigidbody.linearVelocityX,20);
+                collision.gameObject.GetComponent<Animator>().SetTrigger("rinoTrigger");
+            }
+        }
+
+        if(collision.gameObject.tag == "Limite" || collision.gameObject.tag == "Spikehead" )
         {
             animator.SetTrigger("delete");
         }
@@ -159,6 +185,73 @@ public class PlayerScript : MonoBehaviour
             {
                 rigidbody.linearVelocity = new Vector2(-5f,5f);
             }
+        }
+    }
+
+    public void OnCollisionStay2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "Plataforma" )
+        {
+            transform.SetParent(collision.gameObject.transform);
+        }
+    }
+    public void OnCollisionExit2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag == "Plataforma" )
+        {
+            transform.SetParent(null);
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Spikehead")
+        {
+            collision.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
+            collision.GetComponent<Rigidbody2D>().freezeRotation = true;
+            collision.GetComponent<Rigidbody2D>().gravityScale = 5;
+            collision.GetComponent<Rigidbody2D>().mass = 100;
+
+        }
+
+        if (collision.gameObject.tag == "Apple")
+        {
+            countApples++;
+            text_apples.SetText(""+countApples);
+            Destroy(collision.gameObject);
+
+        }
+    }
+    public void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Trampoline")
+        {
+            collision.gameObject.GetComponent<Animator>().SetInteger("tramp_status",0);
+        }
+
+        if (collision.gameObject.tag == "Water")
+        {
+              rigidbody.gravityScale = 5.5f;
+              water = false;
+        }
+    }
+
+    public void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Water")
+        {
+            rigidbody.gravityScale = 0.5f;   
+        }
+
+        if (collision.gameObject.tag == "Trampoline")
+        {
+            rigidbody.linearVelocity = new Vector2(0,9f);
+            animator.gameObject.GetComponent<Animator>().SetInteger("tramp_status",1);
+        }
+
+        if (collision.gameObject.tag == "Fan")
+        {
+            rigidbody.linearVelocity = new Vector2(0,4f);
         }
     }
 

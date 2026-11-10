@@ -6,6 +6,13 @@ TagManager:
   tags:
   - Limite
   - Hit
+  - Spikehead
+  - Trampoline
+  - Fan
+  - Plataforma
+  - Water
+  - Rino
+  - Apple
   layers:
   - Default
   - TransparentFX
